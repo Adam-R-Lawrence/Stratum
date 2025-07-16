@@ -4,6 +4,8 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <string_view>
+#include <cctype>
 
 namespace stratum {
 
@@ -31,9 +33,17 @@ void parse_file(const std::string& path, OutputIt out) {
     }
     std::string line;
     while (std::getline(file, line)) {
-        if (!line.empty()) {
-            *out++ = parse_line(line);
+        // Trim leading whitespace manually
+        std::string_view view(line);
+        while (!view.empty() && std::isspace(static_cast<unsigned char>(view.front()))) {
+            view.remove_prefix(1);
         }
+
+        if (view.empty() || view.front() == ';') {
+            continue;
+        }
+
+        *out++ = parse_line(std::string(view));
     }
 }
 

@@ -10,3 +10,8 @@ target_include_directories(stratum INTERFACE src)
 add_executable(example examples/example.cpp)
 
 target_link_libraries(example PRIVATE stratum)
+
+enable_testing()
+add_executable(tests tests/test_parser.cpp)
+target_link_libraries(tests PRIVATE stratum)
+add_test(NAME parser_tests COMMAND tests)
