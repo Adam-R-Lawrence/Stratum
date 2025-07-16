@@ -1,9 +1,6 @@
 # Stratum
 
-Stratum is a simple C++20 project for experimenting with LED photopolymerization
-printing. It provides a header-only library for generating G-code from ASCII STL
-files and for parsing existing G-code. The generated G-code assumes a moving LED
-light source, making it suitable for LED-based resin printers.
+Stratum is a simple C++20 project for experimenting with LED photopolymerization printing. It provides a header-only library for generating G-code from ASCII STL files and for parsing existing G-code. The generated G-code assumes a moving LED light source, making it suitable for LED-based resin printers.
 
 ## Building
 
@@ -16,14 +13,15 @@ cmake ..
 cmake --build .
 ```
 
-This will produce the `example` executable which shows basic usage of the
-library.
+After building, run the automated tests with:
+
+```bash
+ctest
+```
 
 ## Usage
 
-The `examples/example.cpp` file demonstrates generating G-code from a
-hypothetical `example.stl` file and then parsing an `example.gcode` file. The
-headers now live in the `src/` directory and can be included as:
+The tests in the `tests/` directory demonstrate generating G-code from a hypothetical STL file and parsing a G-code file. The headers live in the `src/` directory and can be included as:
 
 ```cpp
 #include <gcode_parser.h>
@@ -32,9 +30,7 @@ headers now live in the `src/` directory and can be included as:
 
 Both APIs accept `std::filesystem::path` objects for file locations.
 
-Both `generate_from_stl` and `parse_file` throw a `std::runtime_error` if the
-specified file cannot be opened. The example program catches these exceptions
-and prints the error message to `stderr`.
+Both `generate_from_stl` and `parse_file` throw a `std::runtime_error` if the specified file cannot be opened.
 
 ## License
 
