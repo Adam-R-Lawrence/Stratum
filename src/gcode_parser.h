@@ -7,6 +7,7 @@
 #include <string_view>
 #include <cctype>
 #include <stdexcept>
+#include <filesystem>
 
 namespace stratum {
 
@@ -26,11 +27,13 @@ inline GCodeCommand parse_line(const std::string& line) {
     return cmd;
 }
 
+// Parses a G-code file and writes each command to the output iterator.
+// Throws std::runtime_error if the file cannot be opened.
 template <typename OutputIt>
-void parse_file(const std::string& path, OutputIt out) {
+void parse_file(const std::filesystem::path& path, OutputIt out) {
     std::ifstream file(path);
     if (!file.is_open()) {
-        throw std::runtime_error("Failed to open " + path);
+        throw std::runtime_error("Failed to open " + path.string());
     }
     std::string line;
     while (std::getline(file, line)) {
