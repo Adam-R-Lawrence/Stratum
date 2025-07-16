@@ -30,7 +30,12 @@ The tests in the `tests/` directory demonstrate generating G-code from a hypothe
 
 Both APIs accept `std::filesystem::path` objects for file locations.
 
-Both `generate_from_stl` and `parse_file` throw a `std::runtime_error` if the specified file cannot be opened.
+`generate_from_stl` now accepts an LED spot radius and a set of `(depth,
+exposure)` pairs describing the curing behavior. The function determines the
+XY extents of the STL and emits a simple raster scan for a single layer. The
+feed rate is interpolated from the exposure curve. Both `generate_from_stl`
+and `parse_file` throw a `std::runtime_error` if the specified file cannot be
+opened.
 
 ## License
 
