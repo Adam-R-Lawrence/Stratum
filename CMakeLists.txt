@@ -7,8 +7,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_library(stratum INTERFACE)
 target_include_directories(stratum INTERFACE src)
 
-add_executable(stratum_example_parse examples/parse_gcode_test.cpp)
-add_executable(stratum_example_generate examples/generate_gcode_test.cpp)
+enable_testing()
 
-target_link_libraries(stratum_example_parse PRIVATE stratum)
-target_link_libraries(stratum_example_generate PRIVATE stratum)
+add_executable(test_parse_gcode tests/test_parse_gcode.cpp)
+target_link_libraries(test_parse_gcode PRIVATE stratum)
+add_test(NAME parse_gcode COMMAND test_parse_gcode)
+
+add_executable(test_generate_gcode tests/test_generate_gcode.cpp)
+target_link_libraries(test_generate_gcode PRIVATE stratum)
+add_test(NAME generate_gcode COMMAND test_generate_gcode)
