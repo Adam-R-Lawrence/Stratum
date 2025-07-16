@@ -29,3 +29,7 @@ headers now live in the `src/` directory and can be included as:
 #include <gcode_parser.h>
 #include <gcode_generator.h>
 ```
+
+## License
+
+Stratum is licensed under the [MIT License](LICENSE).
