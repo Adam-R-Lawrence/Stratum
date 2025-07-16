@@ -47,6 +47,19 @@ void parse_file(const std::filesystem::path& path, OutputIt out) {
             continue;
         }
 
+        auto comment_pos = view.find(';');
+        if (comment_pos != std::string_view::npos) {
+            view = view.substr(0, comment_pos);
+        }
+
+        while (!view.empty() && std::isspace(static_cast<unsigned char>(view.back()))) {
+            view.remove_suffix(1);
+        }
+
+        if (view.empty()) {
+            continue;
+        }
+
         *out++ = parse_line(std::string(view));
     }
 }
