@@ -5,14 +5,19 @@
 #include <iterator>
 
 int main() {
-    std::vector<std::string> gcode;
-    stratum::generate_from_stl("example.stl", std::back_inserter(gcode));
-    for (const auto& line : gcode) {
-        std::cout << line << '\n';
-    }
+    try {
+        std::vector<std::string> gcode;
+        stratum::generate_from_stl("example.stl", std::back_inserter(gcode));
+        for (const auto& line : gcode) {
+            std::cout << line << '\n';
+        }
 
-    std::vector<stratum::GCodeCommand> commands;
-    stratum::parse_file("example.gcode", std::back_inserter(commands));
-    std::cout << "Parsed " << commands.size() << " commands\n";
+        std::vector<stratum::GCodeCommand> commands;
+        stratum::parse_file("example.gcode", std::back_inserter(commands));
+        std::cout << "Parsed " << commands.size() << " commands\n";
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << '\n';
+        return 1;
+    }
     return 0;
 }

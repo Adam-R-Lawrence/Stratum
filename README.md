@@ -30,6 +30,10 @@ headers now live in the `src/` directory and can be included as:
 #include <gcode_generator.h>
 ```
 
+Both `generate_from_stl` and `parse_file` throw a `std::runtime_error` if the
+specified file cannot be opened. The example program catches these exceptions
+and prints the error message to `stderr`.
+
 ## License
 
 Stratum is licensed under the [MIT License](LICENSE).
