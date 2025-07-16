@@ -11,18 +11,37 @@
 
 namespace stratum {
 
+struct Arg {
+    char letter{};
+    double value{};
+};
+
 struct GCodeCommand {
     std::string command;
-    std::vector<std::string> arguments;
+    std::vector<Arg> arguments;
 };
+
+inline Arg parse_arg(const std::string& token) {
+    if (token.size() < 2) {
+        throw std::runtime_error("Invalid G-code argument: " + token);
+    }
+    Arg arg;
+    arg.letter = token[0];
+    try {
+        arg.value = std::stod(token.substr(1));
+    } catch (const std::exception&) {
+        throw std::runtime_error("Invalid numeric value in argument: " + token);
+    }
+    return arg;
+}
 
 inline GCodeCommand parse_line(const std::string& line) {
     std::istringstream iss(line);
     GCodeCommand cmd;
     iss >> cmd.command;
-    std::string arg;
-    while (iss >> arg) {
-        cmd.arguments.push_back(arg);
+    std::string token;
+    while (iss >> token) {
+        cmd.arguments.push_back(parse_arg(token));
     }
     return cmd;
 }
