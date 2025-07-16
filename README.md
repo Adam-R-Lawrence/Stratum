@@ -30,6 +30,8 @@ headers now live in the `src/` directory and can be included as:
 #include <gcode_generator.h>
 ```
 
+Both APIs accept `std::filesystem::path` objects for file locations.
+
 Both `generate_from_stl` and `parse_file` throw a `std::runtime_error` if the
 specified file cannot be opened. The example program catches these exceptions
 and prints the error message to `stderr`.

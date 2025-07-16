@@ -5,9 +5,10 @@
 #include <iterator>
 #include <cassert>
 #include <cstdio>
+#include <filesystem>
 
 int main() {
-    const char* path = "test.gcode";
+    const std::filesystem::path path = "test.gcode";
     std::ofstream out(path);
     out << "; full line comment\n";
     out << "   ; leading whitespace comment\n";
@@ -29,6 +30,6 @@ int main() {
     assert(cmds[1].arguments[0] == "X1");
     assert(cmds[1].arguments[1] == "Y1");
 
-    std::remove(path);
+    std::filesystem::remove(path);
     return 0;
 }
