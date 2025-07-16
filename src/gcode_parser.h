@@ -6,6 +6,7 @@
 #include <sstream>
 #include <string_view>
 #include <cctype>
+#include <stdexcept>
 
 namespace stratum {
 
@@ -29,7 +30,7 @@ template <typename OutputIt>
 void parse_file(const std::string& path, OutputIt out) {
     std::ifstream file(path);
     if (!file.is_open()) {
-        return;
+        throw std::runtime_error("Failed to open " + path);
     }
     std::string line;
     while (std::getline(file, line)) {
