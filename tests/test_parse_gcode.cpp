@@ -23,16 +23,22 @@ int main() {
     assert(cmds.size() == 3);
     assert(cmds[0].command == "G0");
     assert(cmds[0].arguments.size() == 2);
-    assert(cmds[0].arguments[0] == "X0");
-    assert(cmds[0].arguments[1] == "Y0");
+    assert(cmds[0].arguments[0].letter == 'X');
+    assert(cmds[0].arguments[0].value == 0.0);
+    assert(cmds[0].arguments[1].letter == 'Y');
+    assert(cmds[0].arguments[1].value == 0.0);
     assert(cmds[1].command == "G1");
     assert(cmds[1].arguments.size() == 2);
-    assert(cmds[1].arguments[0] == "X1");
-    assert(cmds[1].arguments[1] == "Y1");
+    assert(cmds[1].arguments[0].letter == 'X');
+    assert(cmds[1].arguments[0].value == 1.0);
+    assert(cmds[1].arguments[1].letter == 'Y');
+    assert(cmds[1].arguments[1].value == 1.0);
     assert(cmds[2].command == "G0");
     assert(cmds[2].arguments.size() == 2);
-    assert(cmds[2].arguments[0] == "X0");
-    assert(cmds[2].arguments[1] == "Y0");
+    assert(cmds[2].arguments[0].letter == 'X');
+    assert(cmds[2].arguments[0].value == 0.0);
+    assert(cmds[2].arguments[1].letter == 'Y');
+    assert(cmds[2].arguments[1].value == 0.0);
 
     std::filesystem::remove(path);
     return 0;
