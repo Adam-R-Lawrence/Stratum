@@ -12,14 +12,16 @@ int main() {
     out << "endsolid test\n";
     out.close();
 
-    std::vector<std::string> gcode;
-    Stratum::generate_from_stl(path, std::back_inserter(gcode));
+    std::vector<std::pair<double, double>> curve{{0.0, 1.0}, {1.0, 2.0}};
 
-    assert(gcode.size() == 4);
+    std::vector<std::string> gcode;
+    Stratum::generate_from_stl(path, 1.0, curve, std::back_inserter(gcode));
+
+    assert(gcode.size() >= 6);
     assert(gcode[0] == "; Begin G-code generated from STL");
-    assert(gcode[1] == "; solid test");
-    assert(gcode[2] == "; endsolid test");
-    assert(gcode[3] == "; End G-code");
+    assert(gcode[1] == "G21");
+    assert(gcode[2] == "G90");
+    assert(gcode.back() == "; End G-code");
 
     std::filesystem::remove(path);
     return 0;
