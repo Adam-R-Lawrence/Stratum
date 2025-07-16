@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <filesystem>
 
-namespace stratum {
+namespace Stratum {
 
 struct Arg {
     char letter{};

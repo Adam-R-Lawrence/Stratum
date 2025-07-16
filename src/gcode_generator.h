@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <filesystem>
 
-namespace stratum {
+namespace Stratum {
 
 // Generates G-code comments from the lines of an ASCII STL file.
 // Throws std::runtime_error if the file cannot be opened.

@@ -13,7 +13,7 @@ int main() {
     out.close();
 
     std::vector<std::string> gcode;
-    stratum::generate_from_stl(path, std::back_inserter(gcode));
+    Stratum::generate_from_stl(path, std::back_inserter(gcode));
 
     assert(gcode.size() == 4);
     assert(gcode[0] == "; Begin G-code generated from STL");
