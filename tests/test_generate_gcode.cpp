@@ -20,17 +20,18 @@ int main() {
                              curve,
                              Stratum::PrintMode::LCD,
                              1.0,
-                             std::filesystem::path("mask.bin"),
                              std::back_inserter(gcode));
 
-    assert(gcode.size() >= 10);
+    assert(gcode.size() >= 13);
     assert(gcode[0] == "; Begin G-code generated from STL");
     assert(gcode[1] == "; Photopolymerization toolpath");
     assert(gcode[2] == "; Mode: LCD");
     assert(gcode[3] == "; Power: 1");
-    assert(gcode[4] == "; LED bitmask: mask.bin");
-    assert(gcode[8] == "G21");
-    assert(gcode[9] == "G90");
+    assert(gcode[7] == "G21");
+    assert(gcode[8] == "G90");
+    assert(gcode[9].rfind("; Layer 0 bitmask:", 0) == 0);
+    assert(gcode[10].rfind("G1", 0) == 0);
+    assert(gcode[11].rfind("G1", 0) == 0);
     assert(gcode.back() == "; End G-code");
 
     std::filesystem::remove(path);

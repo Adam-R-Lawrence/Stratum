@@ -8,7 +8,6 @@
 #include <limits>
 #include <vector>
 #include <utility>
-#include <optional>
 
 namespace Stratum {
 
@@ -46,7 +45,6 @@ void generateFromStl(const std::filesystem::path& stl_path,
                      const std::vector<std::pair<double, double>>& exposure_curve,
                      PrintMode mode,
                      double power,
-                     std::optional<std::filesystem::path> bitmaskPath,
                      OutputIt out) {
     std::ifstream file(stl_path);
     if (!file.is_open()) {
@@ -91,14 +89,6 @@ void generateFromStl(const std::filesystem::path& stl_path,
         line << "; Power: " << power;
         *out++ = line.str();
     }
-    if (mode == PrintMode::LCD) {
-        if (!bitmaskPath) {
-            throw std::runtime_error("Bitmask path required for LCD mode");
-        }
-        std::ostringstream line;
-        line << "; LED bitmask: " << bitmaskPath->string();
-        *out++ = line.str();
-    }
     {
         std::ostringstream line;
         line << "; LED radius: " << led_radius << " mm";
@@ -118,7 +108,13 @@ void generateFromStl(const std::filesystem::path& stl_path,
     *out++ = "G90"; // absolute coordinates
 
     bool forward = true;
+    int layer = 0;
     for (double y = min_y; y <= max_y; y += step) {
+        std::ostringstream mask;
+        mask << "; Layer " << layer << " bitmask: 0x" << std::uppercase << std::hex
+             << ((layer % 2 == 0) ? 0xFF : 0x0F);
+        *out++ = mask.str();
+
         std::ostringstream start;
         std::ostringstream end;
         if (forward) {
@@ -131,6 +127,7 @@ void generateFromStl(const std::filesystem::path& stl_path,
         *out++ = start.str();
         *out++ = end.str();
         forward = !forward;
+        ++layer;
     }
 
     *out++ = "; End G-code";
