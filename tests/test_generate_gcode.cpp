@@ -15,12 +15,22 @@ int main() {
     std::vector<std::pair<double, double>> curve{{0.0, 1.0}, {1.0, 2.0}};
 
     std::vector<std::string> gcode;
-    Stratum::generate_from_stl(path, 1.0, curve, std::back_inserter(gcode));
+    Stratum::generate_from_stl(path,
+                               1.0,
+                               curve,
+                               "LCD",
+                               1.0,
+                               "mask.bin",
+                               std::back_inserter(gcode));
 
-    assert(gcode.size() >= 6);
+    assert(gcode.size() >= 10);
     assert(gcode[0] == "; Begin G-code generated from STL");
-    assert(gcode[1] == "G21");
-    assert(gcode[2] == "G90");
+    assert(gcode[1] == "; Photopolymerization toolpath");
+    assert(gcode[2] == "; Mode: LCD");
+    assert(gcode[3] == "; Power: 1");
+    assert(gcode[4] == "; LED bitmask: mask.bin");
+    assert(gcode[8] == "G21");
+    assert(gcode[9] == "G90");
     assert(gcode.back() == "; End G-code");
 
     std::filesystem::remove(path);

@@ -41,6 +41,9 @@ template <typename OutputIt>
 void generate_from_stl(const std::filesystem::path& stl_path,
                        double led_radius,
                        const std::vector<std::pair<double, double>>& exposure_curve,
+                       const std::string& mode,
+                       double power,
+                       const std::string& bitmask_path,
                        OutputIt out) {
     std::ifstream file(stl_path);
     if (!file.is_open()) {
@@ -74,6 +77,37 @@ void generate_from_stl(const std::filesystem::path& stl_path,
     double feed_rate = exposure > 0.0 ? 1000.0 / exposure : 1000.0;
 
     *out++ = "; Begin G-code generated from STL";
+    *out++ = "; Photopolymerization toolpath";
+    {
+        std::ostringstream line;
+        line << "; Mode: " << mode;
+        *out++ = line.str();
+    }
+    {
+        std::ostringstream line;
+        line << "; Power: " << power;
+        *out++ = line.str();
+    }
+    if (mode == "LCD") {
+        std::ostringstream line;
+        line << "; LED bitmask: " << bitmask_path;
+        *out++ = line.str();
+    }
+    {
+        std::ostringstream line;
+        line << "; LED radius: " << led_radius << " mm";
+        *out++ = line.str();
+    }
+    {
+        std::ostringstream line;
+        line << "; Step size: " << step << " mm";
+        *out++ = line.str();
+    }
+    {
+        std::ostringstream line;
+        line << "; Feed rate: " << feed_rate << " mm/min";
+        *out++ = line.str();
+    }
     *out++ = "G21"; // millimeter units
     *out++ = "G90"; // absolute coordinates
 
