@@ -8,129 +8,164 @@
 #include <limits>
 #include <vector>
 #include <utility>
+#include <variant>
+#include <functional>
+#include <cmath>
+#include <iterator>
+#include <concepts>
 
 namespace Stratum {
 
-enum class PrintMode { LCD, SLA };
+// ── types ──────────────────────────────────────────────────────────────
+using WorkingCurve = std::variant<
+        std::vector<std::pair<double, double>>,
+        std::function<double(double)>>;
 
-// Generates a very simple raster-style G-code toolpath from an ASCII STL file.
-// The STL is treated as a flat 2D shape; the XY extents are used to scan the
-// LED across a single layer. The feed rate is derived from the provided
-// radiant exposure vs. cure depth mapping. Throws std::runtime_error if the
-// file cannot be opened.
-inline double interpolateExposure(
-    double depth,
-    const std::vector<std::pair<double, double>>& curve) {
-    if (curve.empty()) {
-        return 0.0;
-    }
-    if (depth <= curve.front().first) {
-        return curve.front().second;
-    }
-    for (std::size_t i = 1; i < curve.size(); ++i) {
-        if (depth <= curve[i].first) {
-            double d1 = curve[i - 1].first;
-            double d2 = curve[i].first;
-            double e1 = curve[i - 1].second;
-            double e2 = curve[i].second;
-            return e1 + (e2 - e1) * (depth - d1) / (d2 - d1);
-        }
-    }
-    return curve.back().second;
-}
+struct LCDConfig {
+    int    cols;
+    int    rows;
+    double led_radius;     // mm
+    double optical_power;  // mW/cm2
+    double layer_height;   // mm
+    double pitch_mm = 0.0; // centre‑to‑centre; 0 → 2*led_radius
+};
 
-template <typename OutputIt>
-void generateFromStl(const std::filesystem::path& stl_path,
-                     double led_radius,
-                     const std::vector<std::pair<double, double>>& exposure_curve,
-                     PrintMode mode,
-                     double power,
-                     OutputIt out) {
-    std::ifstream file(stl_path);
-    if (!file.is_open()) {
-        throw std::runtime_error("Failed to open " + stl_path.string());
-    }
+struct SLAConfig {
+    double spot_radius;    // mm
+    double optical_power;  // mW/cm2
+    double layer_height;   // mm
+    double hatch_mm = 0.0; // 0 → 2*spot_radius
+};
 
-    double min_x = std::numeric_limits<double>::max();
-    double min_y = std::numeric_limits<double>::max();
-    double max_x = std::numeric_limits<double>::lowest();
-    double max_y = std::numeric_limits<double>::lowest();
+template<class T>
+concept IsLCD = requires(T t) { t.cols; t.rows; t.led_radius; };
+
+template<class T>
+concept IsSLA = requires(T t) { t.spot_radius; };
+
+struct Bounds { double min_x, min_y, max_x, max_y; };
+
+// ── helpers ────────────────────────────────────────────────────────────
+inline Bounds stlBounds(const std::filesystem::path& p)
+{
+    std::ifstream f(p);
+    if (!f) throw std::runtime_error("Cannot open " + p.string());
+
+    Bounds b {  std::numeric_limits<double>::max(),
+                std::numeric_limits<double>::max(),
+                std::numeric_limits<double>::lowest(),
+                std::numeric_limits<double>::lowest() };
 
     std::string token;
-    while (file >> token) {
+    while (f >> token) {
         if (token == "vertex") {
-            double x, y, z;
-            file >> x >> y >> z;
-            min_x = std::min(min_x, x);
-            min_y = std::min(min_y, y);
-            max_x = std::max(max_x, x);
-            max_y = std::max(max_y, y);
+            double x,y,z; f >> x >> y >> z;
+            b.min_x = std::min(b.min_x, x);
+            b.min_y = std::min(b.min_y, y);
+            b.max_x = std::max(b.max_x, x);
+            b.max_y = std::max(b.max_y, y);
         }
     }
+    if (b.min_x == std::numeric_limits<double>::max())
+        b = {0,0,0,0};
+    return b;
+}
 
-    if (min_x == std::numeric_limits<double>::max()) {
-        // No vertices found; default to origin
-        min_x = min_y = max_x = max_y = 0.0;
+inline double exposureAt(double d, const WorkingCurve& wc)
+{
+    return std::visit([d](auto&& arg)->double {
+        using T = std::decay_t<decltype(arg)>;
+        if constexpr (std::is_same_v<T,std::vector<std::pair<double,double>>>){
+            const auto& v = arg;
+            if (v.empty()) return 0.0;
+            if (d<=v.front().first) return v.front().second;
+            for(std::size_t i=1;i<v.size();++i){
+                if (d<=v[i].first){
+                    auto [d1,e1]=v[i-1]; auto [d2,e2]=v[i];
+                    return e1+(e2-e1)*(d-d1)/(d2-d1);
+                }
+            }
+            return v.back().second;
+        } else { return arg(d); }
+    }, wc);
+}
+
+template<typename Out>
+inline void header(Out& o, const std::string& m,double p,double step,double feed)
+{
+    std::ostringstream s;
+    s<<" ; Stratum "<<m; *o++=s.str();
+    s.str(""); s<<" ; Power "<<p<<" mW/cm2"; *o++=s.str();
+    s.str(""); s<<" ; Step "<<step<<" mm"; *o++=s.str();
+    *o++="G21";
+    *o++="G90";
+}
+
+// ── LCD specialization ────────────────────────────────────────────────
+template<IsLCD Cfg, typename Out>
+void generateGCode(const std::filesystem::path& stl,
+                   const WorkingCurve& wc,
+                   const Cfg& cfg,
+                   Out out)
+{
+    const Bounds bb = stlBounds(stl);
+    const double pitch = cfg.pitch_mm>0 ? cfg.pitch_mm : 2.0*cfg.led_radius;
+    const double exposure  = exposureAt(cfg.led_radius, wc);
+    const double feed_rate = exposure>0 ? 1000.0/exposure : 1000.0;
+
+    header(out,"LCD",cfg.optical_power,pitch,feed_rate);
+    {
+        std::ostringstream z; z<<"G1 Z"<<cfg.layer_height<<" F300"; *out++=z.str();
     }
 
-    double step = 2.0 * led_radius;
-    double exposure = interpolateExposure(led_radius, exposure_curve);
-    double feed_rate = exposure > 0.0 ? 1000.0 / exposure : 1000.0;
-
-    *out++ = "; Begin G-code generated from STL";
-    *out++ = "; Photopolymerization toolpath";
-    {
-        std::ostringstream line;
-        line << "; Mode: " << (mode == PrintMode::LCD ? "LCD" : "SLA");
-        *out++ = line.str();
-    }
-    {
-        std::ostringstream line;
-        line << "; Power: " << power;
-        *out++ = line.str();
-    }
-    {
-        std::ostringstream line;
-        line << "; LED radius: " << led_radius << " mm";
-        *out++ = line.str();
-    }
-    {
-        std::ostringstream line;
-        line << "; Step size: " << step << " mm";
-        *out++ = line.str();
-    }
-    {
-        std::ostringstream line;
-        line << "; Feed rate: " << feed_rate << " mm/min";
-        *out++ = line.str();
-    }
-    *out++ = "G21"; // millimeter units
-    *out++ = "G90"; // absolute coordinates
-
-    bool forward = true;
-    int layer = 0;
-    for (double y = min_y; y <= max_y; y += step) {
-        std::ostringstream mask;
-        mask << "; Layer " << layer << " bitmask: 0x" << std::uppercase << std::hex
-             << ((layer % 2 == 0) ? 0xFF : 0x0F);
-        *out++ = mask.str();
-
-        std::ostringstream start;
-        std::ostringstream end;
-        if (forward) {
-            start << "G1 X" << min_x << " Y" << y << " F" << feed_rate;
-            end << "G1 X" << max_x << " Y" << y;
-        } else {
-            start << "G1 X" << max_x << " Y" << y << " F" << feed_rate;
-            end << "G1 X" << min_x << " Y" << y;
+    for(int r=0;r<cfg.rows;++r){
+        double y = r * pitch;
+        std::string bits;
+        bits.reserve(cfg.cols);
+        for(int c=0;c<cfg.cols;++c){
+            double x = c * pitch;
+            bool inside = (x>=bb.min_x && x<=bb.max_x &&
+                           y>=bb.min_y && y<=bb.max_y);
+            bits.push_back(inside ? '1' : '0');
         }
-        *out++ = start.str();
-        *out++ = end.str();
-        forward = !forward;
-        ++layer;
+        std::ostringstream cm; cm<<";ROW "<<r<<" "<<bits;   *out++=cm.str();
+        std::ostringstream cmd; cmd<<"M650 R"<<r<<" B"<<bits; *out++=cmd.str();
+    }
+    *out++="; End";
+}
+
+// ── SLA specialization ────────────────────────────────────────────────
+template<IsSLA Cfg, typename Out>
+void generateGCode(const std::filesystem::path& stl,
+                   const WorkingCurve& wc,
+                   const Cfg& cfg,
+                   Out out)
+{
+    const Bounds bb = stlBounds(stl);
+    const double step = cfg.hatch_mm>0 ? cfg.hatch_mm : 2.0*cfg.spot_radius;
+    const double exposure  = exposureAt(cfg.spot_radius, wc);
+    const double feed_rate = exposure>0 ? 1000.0/exposure : 1000.0;
+
+    header(out,"SLA",cfg.optical_power,step,feed_rate);
+    {
+        std::ostringstream z; z<<"G1 Z"<<cfg.layer_height<<" F300"; *out++=z.str();
     }
 
-    *out++ = "; End G-code";
+    bool fwd=true;
+    for(double y=bb.min_y; y<=bb.max_y; y+=step){
+        std::ostringstream m, s;
+        if(fwd){
+            m<<"G0 X"<<bb.min_x<<" Y"<<y<<" F3000";
+            s<<"G1 X"<<bb.max_x<<" Y"<<y<<" F"<<feed_rate;
+        }else{
+            m<<"G0 X"<<bb.max_x<<" Y"<<y<<" F3000";
+            s<<"G1 X"<<bb.min_x<<" Y"<<y<<" F"<<feed_rate;
+        }
+        *out++=m.str();
+        *out++=s.str();
+        fwd=!fwd;
+    }
+    *out++="; End";
 }
 
 } // namespace Stratum
