@@ -21,7 +21,7 @@ struct GCodeCommand {
     std::vector<Arg> arguments;
 };
 
-inline Arg parse_arg(const std::string& token) {
+inline Arg parseArg(const std::string& token) {
     if (token.size() < 2) {
         throw std::runtime_error("Invalid G-code argument: " + token);
     }
@@ -35,13 +35,13 @@ inline Arg parse_arg(const std::string& token) {
     return arg;
 }
 
-inline GCodeCommand parse_line(const std::string& line) {
+inline GCodeCommand parseLine(const std::string& line) {
     std::istringstream iss(line);
     GCodeCommand cmd;
     iss >> cmd.command;
     std::string token;
     while (iss >> token) {
-        cmd.arguments.push_back(parse_arg(token));
+        cmd.arguments.push_back(parseArg(token));
     }
     return cmd;
 }
@@ -49,7 +49,7 @@ inline GCodeCommand parse_line(const std::string& line) {
 // Parses a G-code file and writes each command to the output iterator.
 // Throws std::runtime_error if the file cannot be opened.
 template <typename OutputIt>
-void parse_file(const std::filesystem::path& path, OutputIt out) {
+void parseFile(const std::filesystem::path& path, OutputIt out) {
     std::ifstream file(path);
     if (!file.is_open()) {
         throw std::runtime_error("Failed to open " + path.string());
@@ -79,8 +79,8 @@ void parse_file(const std::filesystem::path& path, OutputIt out) {
             continue;
         }
 
-        *out++ = parse_line(std::string(view));
+        *out++ = parseLine(std::string(view));
     }
 }
 
-} // namespace stratum
+} // namespace Stratum

@@ -30,14 +30,15 @@ The tests in the `tests/` directory demonstrate generating G-code from a hypothe
 
 Both APIs accept `std::filesystem::path` objects for file locations.
 
-`generate_from_stl` accepts an LED spot radius and a set of `(depth,
+`generateFromStl` accepts an LED spot radius and a set of `(depth,
 exposure)` pairs describing the curing behavior. Additional parameters
-specify the printing mode (`"LCD"` or `"SLA"`), the power level for the
-light source, and the optional LED bitmask path used when operating in LCD
-mode. The function determines the XY extents of the STL and emits a simple
-raster scan for a single layer. The feed rate is interpolated from the
-exposure curve. Both `generate_from_stl` and `parse_file` throw a
-`std::runtime_error` if the specified file cannot be opened.
+specify the printing mode (`Stratum::PrintMode::LCD` or
+`Stratum::PrintMode::SLA`), the power level for the light source, and an
+optional LED bitmask path used only in LCD mode. The function determines
+the XY extents of the STL and emits a simple raster scan for a single
+layer. The feed rate is interpolated from the exposure curve. Both
+`generateFromStl` and `parseFile` throw a `std::runtime_error` if the
+specified file cannot be opened.
 
 ## License
 

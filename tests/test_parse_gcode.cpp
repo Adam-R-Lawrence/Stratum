@@ -18,7 +18,7 @@ int main() {
     out.close();
 
     std::vector<Stratum::GCodeCommand> cmds;
-    Stratum::parse_file(path, std::back_inserter(cmds));
+    Stratum::parseFile(path, std::back_inserter(cmds));
 
     assert(cmds.size() == 3);
     assert(cmds[0].command == "G0");

@@ -8,15 +8,18 @@
 #include <limits>
 #include <vector>
 #include <utility>
+#include <optional>
 
 namespace Stratum {
+
+enum class PrintMode { LCD, SLA };
 
 // Generates a very simple raster-style G-code toolpath from an ASCII STL file.
 // The STL is treated as a flat 2D shape; the XY extents are used to scan the
 // LED across a single layer. The feed rate is derived from the provided
 // radiant exposure vs. cure depth mapping. Throws std::runtime_error if the
 // file cannot be opened.
-inline double interpolate_exposure(
+inline double interpolateExposure(
     double depth,
     const std::vector<std::pair<double, double>>& curve) {
     if (curve.empty()) {
@@ -38,13 +41,13 @@ inline double interpolate_exposure(
 }
 
 template <typename OutputIt>
-void generate_from_stl(const std::filesystem::path& stl_path,
-                       double led_radius,
-                       const std::vector<std::pair<double, double>>& exposure_curve,
-                       const std::string& mode,
-                       double power,
-                       const std::string& bitmask_path,
-                       OutputIt out) {
+void generateFromStl(const std::filesystem::path& stl_path,
+                     double led_radius,
+                     const std::vector<std::pair<double, double>>& exposure_curve,
+                     PrintMode mode,
+                     double power,
+                     std::optional<std::filesystem::path> bitmaskPath,
+                     OutputIt out) {
     std::ifstream file(stl_path);
     if (!file.is_open()) {
         throw std::runtime_error("Failed to open " + stl_path.string());
@@ -73,14 +76,14 @@ void generate_from_stl(const std::filesystem::path& stl_path,
     }
 
     double step = 2.0 * led_radius;
-    double exposure = interpolate_exposure(led_radius, exposure_curve);
+    double exposure = interpolateExposure(led_radius, exposure_curve);
     double feed_rate = exposure > 0.0 ? 1000.0 / exposure : 1000.0;
 
     *out++ = "; Begin G-code generated from STL";
     *out++ = "; Photopolymerization toolpath";
     {
         std::ostringstream line;
-        line << "; Mode: " << mode;
+        line << "; Mode: " << (mode == PrintMode::LCD ? "LCD" : "SLA");
         *out++ = line.str();
     }
     {
@@ -88,9 +91,12 @@ void generate_from_stl(const std::filesystem::path& stl_path,
         line << "; Power: " << power;
         *out++ = line.str();
     }
-    if (mode == "LCD") {
+    if (mode == PrintMode::LCD) {
+        if (!bitmaskPath) {
+            throw std::runtime_error("Bitmask path required for LCD mode");
+        }
         std::ostringstream line;
-        line << "; LED bitmask: " << bitmask_path;
+        line << "; LED bitmask: " << bitmaskPath->string();
         *out++ = line.str();
     }
     {

@@ -15,13 +15,13 @@ int main() {
     std::vector<std::pair<double, double>> curve{{0.0, 1.0}, {1.0, 2.0}};
 
     std::vector<std::string> gcode;
-    Stratum::generate_from_stl(path,
-                               1.0,
-                               curve,
-                               "LCD",
-                               1.0,
-                               "mask.bin",
-                               std::back_inserter(gcode));
+    Stratum::generateFromStl(path,
+                             1.0,
+                             curve,
+                             Stratum::PrintMode::LCD,
+                             1.0,
+                             std::filesystem::path("mask.bin"),
+                             std::back_inserter(gcode));
 
     assert(gcode.size() >= 10);
     assert(gcode[0] == "; Begin G-code generated from STL");

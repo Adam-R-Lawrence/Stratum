@@ -10,7 +10,7 @@ int main() {
     const std::filesystem::path below = "../tests/gcode/photocuring_below.gcode";
 
     std::vector<Stratum::GCodeCommand> cmds;
-    Stratum::parse_file(above, std::back_inserter(cmds));
+    Stratum::parseFile(above, std::back_inserter(cmds));
     assert(cmds.size() == 14);
     assert(cmds.front().command == "G21");
     assert(cmds.back().command == "M30");
@@ -26,7 +26,7 @@ int main() {
     assert(cmds[2].arguments[3].value == 6000.0);
 
     cmds.clear();
-    Stratum::parse_file(below, std::back_inserter(cmds));
+    Stratum::parseFile(below, std::back_inserter(cmds));
     assert(cmds.size() == 14);
     assert(cmds.front().command == "G21");
     assert(cmds.back().command == "M30");
