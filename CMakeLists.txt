@@ -1,19 +1,25 @@
+# CMakeLists.txt  (only the changed / added lines are commented)
+
 cmake_minimum_required(VERSION 3.21)
 project(Stratum LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+add_library(lodepng STATIC external/lodepng/lodepng.cpp)
+target_include_directories(lodepng PUBLIC external/lodepng)
+
 add_library(stratum INTERFACE)
 target_include_directories(stratum INTERFACE src)
+target_link_libraries(stratum INTERFACE lodepng)
 
 enable_testing()
 
-add_executable(test_parse_gcode tests/test_parse_gcode.cpp)
+add_executable(test_parse_gcode        tests/test_parse_gcode.cpp)
 target_link_libraries(test_parse_gcode PRIVATE stratum)
 add_test(NAME parse_gcode COMMAND test_parse_gcode)
 
-add_executable(test_generate_gcode tests/test_generate_gcode.cpp)
+add_executable(test_generate_gcode     tests/test_generate_gcode.cpp)
 target_link_libraries(test_generate_gcode PRIVATE stratum)
 add_test(NAME generate_gcode COMMAND test_generate_gcode)
 
