@@ -30,16 +30,13 @@ The tests in the `tests/` directory demonstrate generating G-code from a hypothe
 
 Both APIs accept `std::filesystem::path` objects for file locations.
 
-`generateFromStl` accepts an LED spot radius and a set of `(depth,
-exposure)` pairs describing the curing behavior. Additional parameters
-specify the printing mode (`Stratum::PrintMode::LCD` or
-`Stratum::PrintMode::SLA`) and the power level for the light source.
-Bitmasks for each layer are generated automatically and emitted as
-comments in the G-code. The function determines the XY extents of the
-STL and emits a simple raster scan for a single layer. The feed rate is
-interpolated from the exposure curve. Both
-`generateFromStl` and `parseFile` throw a `std::runtime_error` if the
-specified file cannot be opened.
+`generateGCode` takes an ASCII STL file along with either a
+`Stratum::LCDConfig` or `Stratum::SLAConfig` structure describing the
+printer setup. The resulting G-code is written through an output
+iterator.  Masks for each layer are produced automatically and stored as
+1‑bit PNG images.  `parseFile` reads an existing G-code file and
+produces a sequence of `Stratum::GCodeCommand` objects.  Both functions
+throw `std::runtime_error` if the requested file cannot be opened.
 
 ## License
 

@@ -5,6 +5,7 @@
 #include <iterator>
 #include <cassert>
 #include <filesystem>
+#include <variant>
 
 int main() {
     const std::filesystem::path path = "test.gcode";
@@ -24,21 +25,27 @@ int main() {
     assert(cmds[0].command == "G0");
     assert(cmds[0].arguments.size() == 2);
     assert(cmds[0].arguments[0].letter == 'X');
-    assert(cmds[0].arguments[0].value == 0.0);
+    assert(std::holds_alternative<double>(cmds[0].arguments[0].value));
+    assert(std::get<double>(cmds[0].arguments[0].value) == 0.0);
     assert(cmds[0].arguments[1].letter == 'Y');
-    assert(cmds[0].arguments[1].value == 0.0);
+    assert(std::holds_alternative<double>(cmds[0].arguments[1].value));
+    assert(std::get<double>(cmds[0].arguments[1].value) == 0.0);
     assert(cmds[1].command == "G1");
     assert(cmds[1].arguments.size() == 2);
     assert(cmds[1].arguments[0].letter == 'X');
-    assert(cmds[1].arguments[0].value == 1.0);
+    assert(std::holds_alternative<double>(cmds[1].arguments[0].value));
+    assert(std::get<double>(cmds[1].arguments[0].value) == 1.0);
     assert(cmds[1].arguments[1].letter == 'Y');
-    assert(cmds[1].arguments[1].value == 1.0);
+    assert(std::holds_alternative<double>(cmds[1].arguments[1].value));
+    assert(std::get<double>(cmds[1].arguments[1].value) == 1.0);
     assert(cmds[2].command == "G0");
     assert(cmds[2].arguments.size() == 2);
     assert(cmds[2].arguments[0].letter == 'X');
-    assert(cmds[2].arguments[0].value == 0.0);
+    assert(std::holds_alternative<double>(cmds[2].arguments[0].value));
+    assert(std::get<double>(cmds[2].arguments[0].value) == 0.0);
     assert(cmds[2].arguments[1].letter == 'Y');
-    assert(cmds[2].arguments[1].value == 0.0);
+    assert(std::holds_alternative<double>(cmds[2].arguments[1].value));
+    assert(std::get<double>(cmds[2].arguments[1].value) == 0.0);
 
     std::filesystem::remove(path);
     return 0;
